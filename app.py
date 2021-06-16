@@ -13,7 +13,7 @@ app = Flask(__name__)
 # Database
 DBNAME = "python_test"
 DBURI = "mongodb://localhost:27017/?serverSelectionTimeoutMS=5000&connectTimeoutMS=10000"
-connect(host=DBURI)
+connect(db=DBNAME, host=DBURI)
 
 # Seed data
 genres = GenreResources.DumpGenres()
