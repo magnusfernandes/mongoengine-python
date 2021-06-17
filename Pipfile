@@ -5,8 +5,9 @@ name = "pypi"
 
 [packages]
 flask = "*"
-flask-wtf = "*"
 mongoengine = "*"
+requests = "*"
+faker = "*"
 
 [dev-packages]
 autopep8 = "*"
