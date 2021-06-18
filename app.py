@@ -20,3 +20,4 @@ print("Spotify access token:", spotify.getAccessToken())
 SpotifyResources(accessToken=spotify.getAccessToken())
 
 print("Database seeded successfully")
+exit()

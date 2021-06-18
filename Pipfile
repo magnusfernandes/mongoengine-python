@@ -8,6 +8,7 @@ flask = "*"
 mongoengine = "*"
 requests = "*"
 faker = "*"
+rich = "*"
 
 [dev-packages]
 autopep8 = "*"

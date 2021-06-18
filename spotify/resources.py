@@ -1,16 +1,18 @@
+import requests
+from faker import Faker
+from random import randrange
+from urllib.parse import urlencode
+from rich import console, progress
+
+from api.playlists.models import PlayList
+from api.users.models import Users
 from api.events.models import Events
 from api.contents.models import ContentGroups, ContentType, Contents
 from api.artists.models import Artists
 from api.languages.models import Languages
 from api.genres.models import Genres
-import requests
-from urllib.parse import urlencode
-from faker import Faker
-from faker.providers import internet, misc
-from random import randrange
 
-from api.playlists.models import PlayList
-from api.users.models import Users
+console = console.Console()
 
 
 class SpotifyResources(object):
@@ -30,16 +32,23 @@ class SpotifyResources(object):
         super().__init__()
         self.accessToken = accessToken
         self.createUsers()
+        console.print("Users loaded!", style="bold red")
         self.createGenres()
+        console.print("Genres loaded!", style="bold red")
         self.createLanguages()
-        for idx in range(0, 199):
+        console.print("Languages loaded!", style="bold red")
+        for idx in progress.track(range(0, 200), description="[bold red]Loading artists"):
             self.createArtists(offset=idx)
         self.createAlbums()
-        for idx in range(0, 159):
+        console.print("Albums loaded!", style="bold red")
+        for idx in progress.track(range(0, 160), description="[bold red]Loading tracks"):
             self.createSongs(offset=idx)
-        self.createPodcasts()
+        for idx in progress.track(range(0, 100), description="[bold red]Loading podcasts"):
+            self.createPodcasts()
         self.fetchPlaylists()
+        console.print("Playlists loaded!", style="bold red")
         self.createEvents()
+        console.print("Events loaded!", style="bold red")
 
     def getHeader(self):
         headers = {
@@ -48,7 +57,7 @@ class SpotifyResources(object):
         return headers
 
     def createUsers(self):
-        fake = Faker(internet)
+        fake = Faker()
         for _ in range(100):
             user = Users(
                 name=fake.name(),
@@ -90,7 +99,7 @@ class SpotifyResources(object):
         return languages
 
     def createArtists(self, offset):
-        fake = Faker(misc)
+        fake = Faker()
         url = "https://api.spotify.com/v1/search"
         data = {
             "q": "a",
@@ -129,7 +138,7 @@ class SpotifyResources(object):
         return self.artists[randrange(len(self.artists))]
 
     def createSongs(self, offset):
-        fake = Faker(misc)
+        fake = Faker()
         url = "https://api.spotify.com/v1/search"
         data = {
             "q": "a",
@@ -175,16 +184,15 @@ class SpotifyResources(object):
 
     def createPodcasts(self):
         fake = Faker()
-        for _ in range(1):
-            podcast = ContentGroups(
-                title=fake.name(),
-                description=fake.paragraph(nb_sentences=3),
-                contentType=ContentType.Podcast,
-                totalLikes=randrange(20, 1000),
-                totalViews=randrange(900, 1000000)
-            ).save()
-            self.podcasts.append(podcast)
-            self.createEpisodesForPodcast(podcast=podcast)
+        podcast = ContentGroups(
+            title=fake.name(),
+            description=fake.paragraph(nb_sentences=3),
+            contentType=ContentType.Podcast,
+            totalLikes=randrange(20, 1000),
+            totalViews=randrange(900, 1000000)
+        ).save()
+        self.podcasts.append(podcast)
+        self.createEpisodesForPodcast(podcast=podcast)
 
     def createEpisodesForPodcast(self, podcast):
         fake = Faker()
