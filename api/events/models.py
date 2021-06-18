@@ -18,7 +18,7 @@ class EventTypes(enum.IntEnum):
 
 class Events(Document):
     title = StringField(max_length=256, required=True)
-    description = StringField(max_length=256, required=False)
+    description = StringField(max_length=1048, required=False)
     eventType = IntField(choices=list(map(int, EventTypes)),
                          default=EventTypes.Chat, required=True)
     artists = ListField(ReferenceField(Artists), required=False)

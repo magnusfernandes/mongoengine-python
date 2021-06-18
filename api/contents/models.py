@@ -18,6 +18,8 @@ from api.languages.models import Languages
 
 class ContentType(enum.IntEnum):
     Music = 1
+    Podcast = 2
+    Poetry = 3
 
 
 class ArtistCollaboration(EmbeddedDocument):

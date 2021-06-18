@@ -1,3 +1,5 @@
+from api.events.models import Events
+from api.contents.models import ContentType, Contents
 from api.artists.models import Artists
 from api.languages.models import Languages
 from api.genres.models import Genres
@@ -18,6 +20,8 @@ class SpotifyResources(object):
     playlists = []
     languages = []
     artists = []
+    tracks = []
+    events = []
 
     def __init__(self, accessToken):
         super().__init__()
@@ -25,10 +29,11 @@ class SpotifyResources(object):
         self.createUsers()
         self.createGenres()
         self.createLanguages()
-        for idx in range(0, 199):
-            self.createArtists(offset=idx)
+        # for idx in range(0, 199):
+        self.createArtists(offset=0)
         # for idx in range(0, 159):
-        # self.createSongs(offset=0)
+        self.createSongs(offset=0)
+        self.createEvents()
 
     def getHeader(self):
         headers = {
@@ -51,11 +56,17 @@ class SpotifyResources(object):
         respData = resp.json()
         allGenres = respData['genres']
         for idx, genre in enumerate(allGenres):
-            genre = Genres(
+            newGenre = Genres(
                 name=genre,
                 profilePic=f"https://picsum.photos/id/{idx}/200/200"
             ).save()
-            self.genres.append(genre)
+            self.genres.append(newGenre)
+
+    def getRandomGenreList(self):
+        genres = []
+        for _ in range(0, randrange(3)):
+            genres.append(self.genres[randrange(len(self.genres))])
+        return genres
 
     def createLanguages(self):
         languages = ["English", "Hindi", "Bengali", "Marathi",
@@ -65,6 +76,12 @@ class SpotifyResources(object):
                 name=item
             ).save()
             self.languages.append(language)
+
+    def getRandomLanguageList(self):
+        languages = []
+        for _ in range(0, randrange(5)):
+            languages.append(self.languages[randrange(len(self.languages))])
+        return languages
 
     def createArtists(self, offset):
         fake = Faker(misc)
@@ -80,12 +97,6 @@ class SpotifyResources(object):
         respData = resp.json()
         artistsData = respData['artists']['items']
         for data in artistsData:
-            languages = []
-            for _ in range(0, randrange(9)):
-                languages.append(self.languages[randrange(9)])
-            genres = []
-            for _ in range(0, randrange(len(self.genres))):
-                genres.append(self.genres[randrange(len(self.genres))])
             profileImg = None
             if len(data['images']) > 0:
                 profileImg = data['images'][0]['url']
@@ -95,14 +106,24 @@ class SpotifyResources(object):
                 profilePicture=profileImg,
                 featuredPictureUrl=profileImg,
                 bio=fake.paragraph(nb_sentences=3),
-                languages=languages,
-                genres=genres,
+                languages=self.getRandomLanguageList(),
+                genres=self.getRandomGenreList(),
                 coreMember=fake.boolean(chance_of_getting_true=25),
                 verifiedMember=fake.boolean(chance_of_getting_true=50)
             ).save()
             self.artists.append(artist)
 
+    def getRandomArtistList(self):
+        artists = []
+        for _ in range(0, randrange(5)):
+            artists.append(self.artists[randrange(len(self.artists))])
+        return artists
+
+    def getRandomArtist(self):
+        return self.artists[randrange(len(self.artists))]
+
     def createSongs(self, offset):
+        fake = Faker(misc)
         url = "https://api.spotify.com/v1/search"
         data = {
             "q": "a",
@@ -113,7 +134,66 @@ class SpotifyResources(object):
         endpoint = f"{url}?{urlencode(data)}"
         resp = requests.get(endpoint, headers=self.getHeader())
         respData = resp.json()
-        print(respData)
+        tracksData = respData['tracks']['items']
+        for data in tracksData:
+            images = []
+            for img in data['album']['images']:
+                images.append(img['url'])
+            featured = None
+            if len(images) > 0:
+                featured = images[0]
+            track = Contents(
+                title=data['name'],
+                description=fake.paragraph(nb_sentences=2),
+                language=self.getRandomLanguageList(),
+                contentType=ContentType.Music,
+                genre=self.genres[randrange(len(self.genres))],
+                leadArtist=self.getRandomArtist(),
+                credits=fake.paragraph(nb_sentences=12),
+                lyricsUrl=fake.url(),
+                audioUrl=fake.url(),
+                subTitlesUrl=fake.url(),
+                videoUrl=fake.url(),
+                thumbnailUrl=images,
+                featuredPictureUrl=featured,
+                totalLikes=randrange(20, 10000),
+                totalViews=randrange(900, 1000000)
+            ).save()
+            self.tracks.append(track)
+
+    def createEvents(self):
+        fake = Faker()
+        url = "https://api.spotify.com/v1/search"
+        data = {
+            "q": "i",
+            "type": "show",
+            "limit": 20,
+            "market": "IN"
+        }
+        endpoint = f"{url}?{urlencode(data)}"
+        resp = requests.get(endpoint, headers=self.getHeader())
+        respData = resp.json()
+        showsData = respData['shows']['items']
+        for data in showsData:
+            images = []
+            for img in data['images']:
+                images.append(img['url'])
+            featured = None
+            if len(images) > 0:
+                featured = images[0]
+            event = Events(
+                title=data['name'],
+                description=data['description'],
+                artists=self.getRandomArtistList(),
+                maxParticipants=randrange(20, 10000),
+                eventAt=fake.date_between(start_date='today', end_date='+1y'),
+                eventDuration=randrange(20, 36000),
+                eventLink=fake.url(),
+                eventCost=randrange(100, 3000),
+                thumbnailUrl=images,
+                featuredPictureUrl=featured,
+            ).save()
+            self.events.append(event)
 
     def createPlaylist(self, playlists):
         for idx, data in enumerate(playlists):
